@@ -2,23 +2,25 @@
 //based on: http://stackoverflow.com/questions/10163675/merge-xml-files-in-php
 $savedXML = new DOMDocument; //original xml document
 $savedXML->preserveWhiteSpace = false;
+$savedXML->formatOutput = true;
 $savedXML->load('publications/merged.xml');
 
 $pubmedSearch='http://www.ncbi.nlm.nih.gov/entrez/eutils/erss.cgi?rss_guid=1levKdK_NRD5DPdpOB_de21M8EuIKhyq52iQycdfLjG9bC2szn';//new pubmed searches xml document for "bruce je[auth]"
 //echo(file_get_contents($pubmedSearch));
 $newXML= new DOMDocument();
+$newXML->formatOutput = true;
 $newXML->loadXML(file_get_contents($pubmedSearch));
 
 // get 'res' element of document 1
-$res1 = $savedXML->getElementsByTagName('item')->item(0); //edited res - items
+$res1 = $newXML->getElementsByTagName('channel')->item(0); //edited res - items
 
 // iterate over 'item' elements of document 2
-$items2 = $newXML->getElementsByTagName('item');
+$items2 = $savedXML->getElementsByTagName('item');
 for ($i = 0; $i < $items2->length; $i ++) {
 	$item2 = $items2->item($i);
 
 	// import/copy item from document 2 to document 1
-	$item1 = $savedXML->importNode($item2, true);
+	$item1 = $newXML->importNode($item2, true);
 
 	// append imported item to document 1 'res' element
 	$res1->appendChild($item1);
@@ -29,7 +31,9 @@ $newXML->save('publications/new.xml'); //edited -added saving into xml file
 
 $merged = new DOMDocument; //new merged xml document
 $merged->preserveWhiteSpace = false;
-$merged->load('publications/merged.xml');
+$merged->load('publications/new.xml');
+
+$count = $merged->getElementsByTagName('item')->length; //count to display the right # of feed items
 
 //from http://bavotasan.com/2010/display-rss-feed-with-php/
 $feed = array();
@@ -45,7 +49,7 @@ foreach ($merged->getElementsByTagName('item') as $node) {
 	array_push($feed, $item);
 }
 
-$limit = 93; //how many articles displayed on site...
+$limit = $count; //how many articles displayed on site based on item count in merged.xml
 for($x=0;$x<$limit;$x++) {
 	$title = str_replace(' & ', ' &amp; ', $feed[$x]['title']);
 	$link = $feed[$x]['link'];
